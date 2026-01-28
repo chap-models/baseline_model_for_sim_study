@@ -1,0 +1,16 @@
+# R artifacts
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Generated outputs
+output/*.rds
+output/*.csv
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

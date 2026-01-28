@@ -1,0 +1,45 @@
+name: inla_baseline_poisson
+
+target: disease_cases
+required_covariates:
+  - population
+  - rainfall
+  - mean_temperature
+supported_period_type: month
+allow_free_additional_continuous_covariates: false
+
+meta_data:
+  display_name: INLA Baseline Poisson Model
+  description: >
+    A baseline disease prediction model using INLA with Poisson likelihood,
+    log link, linear effects for rainfall and mean_temperature (shared across regions),
+    and a spatial IID random effect per location.
+  author: CHAP Team
+  author_assessed_status: yellow
+  organization: CHAP
+  contact_email: chap@example.com
+
+adapters:
+  disease_cases: disease_cases
+  population: population
+  rainfall: rainfall
+  mean_temperature: mean_temperature
+  time_period: time_period
+  location: location
+
+docker_env:
+  image: ghcr.io/dhis2-chap/docker_r_inla:master
+
+entry_points:
+  train:
+    parameters:
+      train_data: path
+      model: str
+    command: "Rscript train.R {train_data} {model}"
+  predict:
+    parameters:
+      historic_data: path
+      future_data: path
+      model: str
+      out_file: path
+    command: "Rscript predict.R {model} {historic_data} {future_data} {out_file}"
