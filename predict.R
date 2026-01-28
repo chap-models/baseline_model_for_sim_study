@@ -34,6 +34,16 @@ predict_chap <- function(model_path, historic_data_path, future_data_path, predi
     control.compute = list(config = TRUE)
   )
 
+  # Explainability - save fixed effects to CSV
+  unique_file_name <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  fe_df <- data.frame(
+    term = rownames(inla_result$summary.fixed),
+    mean = inla_result$summary.fixed$mean,
+    sd = inla_result$summary.fixed$sd,
+    row.names = NULL
+  )
+  write.csv(fe_df, paste0("explainability_", unique_file_name, ".csv"), row.names = FALSE)
+
   # Generate posterior samples for future data
   n_samples <- 1000
   samples_matrix <- generate_poisson_samples(
