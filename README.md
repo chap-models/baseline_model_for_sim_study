@@ -6,14 +6,14 @@
 
 A simple CHAP-compatible baseline model using INLA with:
 - Poisson likelihood with log link
-- Linear effects for `rainfall` and `mean_temperature` (shared across regions)
+- Linear effects for `rainfall` and `mean_temperature` with a 3-month lag (shared across regions)
 - Spatial IID random effect per location
 - Monthly data support
 
 ## Model Formula
 
 ```r
-disease_cases ~ rainfall + mean_temperature + f(location_id, model = "iid")
+disease_cases ~ rainfall_lag3 + mean_temperature_lag3 + f(location_id, model = "iid")
 ```
 
 With `E = population` as the offset.

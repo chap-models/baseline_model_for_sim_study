@@ -18,11 +18,26 @@ predict_chap <- function(model_path, historic_data_path, future_data_path, predi
   # Handle missing disease_cases
   historic_df$disease_cases[is.na(historic_df$disease_cases)] <- 0
 
+  # Combine historic and future data to compute lagged covariates
+  future_df$disease_cases <- NA  # placeholder for combining
+  combined_df <- rbind(historic_df, future_df)
+
+  # Add lagged covariates (lag = 3 months)
+  combined_df <- add_lagged_covariates(combined_df, c("rainfall", "mean_temperature"), lag = 3)
+
+  # Split back into historic and future
+  n_historic <- nrow(historic_df)
+  historic_df <- combined_df[1:n_historic, ]
+  future_df <- combined_df[(n_historic + 1):nrow(combined_df), ]
+
+  # Remove rows with NA in lagged covariates for training
+  historic_df <- historic_df[!is.na(historic_df$rainfall_lag3) & !is.na(historic_df$mean_temperature_lag3), ]
+
   # Define INLA formula
   # Poisson likelihood with log link
-  # Linear effects for rainfall and mean_temperature (shared across locations)
+  # Linear effects for lagged rainfall and mean_temperature (shared across locations)
   # IID random effect per location
-  formula <- disease_cases ~ rainfall + mean_temperature + f(location_id, model = "iid")
+  formula <- disease_cases ~ rainfall_lag3 + mean_temperature_lag3 + f(location_id, model = "iid")
 
   # Fit INLA model on historic data
   inla_result <- inla(

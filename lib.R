@@ -19,6 +19,25 @@ add_location_ids <- function(df, mapping) {
   df
 }
 
+#' Add lagged covariates per location
+#' @param df Dataframe with location and covariate columns (must be sorted by time within location)
+#' @param vars Character vector of variable names to lag
+#' @param lag Number of periods to lag
+#' @return Dataframe with added lagged columns (named var_lag3 etc.)
+add_lagged_covariates <- function(df, vars, lag = 3) {
+  for (var in vars) {
+    lag_name <- paste0(var, "_lag", lag)
+    df[[lag_name]] <- NA
+    for (loc in unique(df$location)) {
+      loc_idx <- which(df$location == loc)
+      values <- df[[var]][loc_idx]
+      lagged <- c(rep(NA, lag), values[1:(length(values) - lag)])
+      df[[lag_name]][loc_idx] <- lagged
+    }
+  }
+  df
+}
+
 #' Generate Poisson samples from INLA posterior
 #' @param inla_result INLA result object
 #' @param newdata Dataframe for prediction (with location_id and covariates)
@@ -43,11 +62,11 @@ generate_poisson_samples <- function(inla_result, newdata, n_samples, location_m
     intercept_idx <- grep("^\\(Intercept\\)", latent_names)
     intercept <- if (length(intercept_idx) > 0) latent[intercept_idx, 1] else 0
 
-    # Get covariate effects
-    rainfall_idx <- grep("^rainfall:", latent_names)
+    # Get covariate effects (lagged)
+    rainfall_idx <- grep("^rainfall_lag3:", latent_names)
     beta_rainfall <- if (length(rainfall_idx) > 0) latent[rainfall_idx, 1] else 0
 
-    temp_idx <- grep("^mean_temperature:", latent_names)
+    temp_idx <- grep("^mean_temperature_lag3:", latent_names)
     beta_temp <- if (length(temp_idx) > 0) latent[temp_idx, 1] else 0
 
     # Get location random effects (IID)
@@ -63,8 +82,8 @@ generate_poisson_samples <- function(inla_result, newdata, n_samples, location_m
     # Compute linear predictor for each observation
     for (i in seq_len(n_obs)) {
       eta <- intercept +
-        beta_rainfall * newdata$rainfall[i] +
-        beta_temp * newdata$mean_temperature[i] +
+        beta_rainfall * newdata$rainfall_lag3[i] +
+        beta_temp * newdata$mean_temperature_lag3[i] +
         location_effects[newdata$location_id[i]]
 
       # Lambda = E * exp(eta) where E is population (offset)
